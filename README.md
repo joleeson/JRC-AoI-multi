@@ -1,5 +1,5 @@
 # JRC-AoI
-.
+Code for the paper "Learning to Schedule Joint Radar-Communication Requests for Optimal Information Freshness" as published in IEEE Intelligent Vehicles Symposium 2021.
 
 ## Getting started
 Install the dependencies listed in 'requirements.txt'.
