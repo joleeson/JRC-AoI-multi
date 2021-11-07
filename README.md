@@ -1,5 +1,7 @@
 # JRC-AoI
-Code for the paper:
+Code for the following papers:
+
+J. Lee, D. Niyato, Y. L. Guan and D. I. Kim, "Learning to Schedule Joint Radar-Communication Requests for Optimal Information Freshness," 2021 IEEE Intelligent Vehicles Symposium (IV), 2021, pp. 8-15, doi: 10.1109/IV48863.2021.9575131.
 
 J. Lee, T. D. Niyato, Y. L. Guan and D. I. Kim, "Learning to Schedule Joint Radar-Communication with Deep Multi-Agent Reinforcement Learning," in IEEE Transactions on Vehicular Technology, doi: 10.1109/TVT.2021.3124810.
 
