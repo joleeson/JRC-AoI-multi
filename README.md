@@ -1,5 +1,7 @@
 # JRC-AoI
-Code for the paper "Learning to Schedule Joint Radar-Communication Requests for Optimal Information Freshness" as published in IEEE Intelligent Vehicles Symposium 2021.
+Code for the paper:
+
+J. Lee, T. D. Niyato, Y. L. Guan and D. I. Kim, "Learning to Schedule Joint Radar-Communication with Deep Multi-Agent Reinforcement Learning," in IEEE Transactions on Vehicular Technology, doi: 10.1109/TVT.2021.3124810.
 
 ## Getting started
 Install the dependencies listed in 'requirements.txt'.
