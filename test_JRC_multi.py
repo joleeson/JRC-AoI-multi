@@ -1,20 +1,23 @@
 from __future__ import division
-# from JRCwithAOI_v0b import AV_Environment
-# from JRCwithAOI_v3b import AV_Environment
-# from JRCwithAOI_multi_v0 import AV_Environment
-from JRCwithAOI_multi_v0d2 import AV_Environment
-from config_jrc_aoi_multi_v0a import state_space_size
+from JRCwithAOI_multi import AV_Environment
+from config_jrc_aoi_multi import state_space_size
 import numpy as np
 import numpy.random as random
 import random as python_random
-# import json
 import time
 import os
 import argparse
-import logz
+import logger
 import inspect
 
 """
+Code for the paper "Learning to Schedule Joint Radar-Communication with Deep
+Multi-Agent Reinforcement Learning", IEEE Transactions on Vehicular Technology
+
+Author: Joash Lee
+
+This program runs agents in the Joint Radar-Communication (JRC) and Age of Information (AoI) Markov
+Game in the file 'JRCwithAOI_multi.py' using the binary exponential backoff (BEB) strategy.
 
 """
 
@@ -24,11 +27,11 @@ def pathlength(path):
 
 def setup_logger(logdir, locals_):
     # Configure output directory for logging
-    logz.configure_output_dir(logdir)
+    logger.configure_output_dir(logdir)
     # Log experimental parameters
     args = inspect.getargspec(test)[0]
     params = {k: locals_[k] if k in locals_ else None for k in args}
-    logz.save_params(params)
+    logger.save_params(params)
 
 def alternative_switch_action(t, num_actions):
     """
@@ -276,33 +279,33 @@ def test(
         r_overflow = ([path["r_overflow"] for path in paths])
         
         
-        logz.log_tabular("Time", time.time() - start)
-        logz.log_tabular("Iteration", itr)
-        logz.log_tabular("Average Reward", np.mean(returns))   # per agent per episode
-        logz.log_tabular("StdReward", np.std(returns))
-        logz.log_tabular("MaxReward", np.max(returns))
-        logz.log_tabular("MinReward", np.min(returns))
-        logz.log_tabular("nb_unexpected_ev", np.mean(nb_unexpected_ev))
-        logz.log_tabular("wrong_mode_actions", np.mean(wrong_mode_actions))
-        logz.log_tabular("comm action %", np.mean(comm_counter)/400)
-        logz.log_tabular("radar action %", np.mean(radar_counter)/400)
-        logz.log_tabular("no-op %", (400 - np.mean(comm_counter) - np.mean(radar_counter)) / 400)
-        logz.log_tabular("comm action req %", np.mean(comm_req_counter)/400)
-        logz.log_tabular("radar action req %", np.mean(radar_req_counter)/400)
-        logz.log_tabular("no-op  req %", (400 - np.mean(comm_req_counter) - np.mean(radar_req_counter)) / 400)
-        logz.log_tabular("throughput", np.mean(throughput))
-        logz.log_tabular("r_age", np.mean(r_age))
-        logz.log_tabular("r_radar", np.mean(r_radar))
-        logz.log_tabular("r_overflow", np.mean(r_overflow))
+        logger.log_tabular("Time", time.time() - start)
+        logger.log_tabular("Iteration", itr)
+        logger.log_tabular("Average Reward", np.mean(returns))   # per agent per episode
+        logger.log_tabular("StdReward", np.std(returns))
+        logger.log_tabular("MaxReward", np.max(returns))
+        logger.log_tabular("MinReward", np.min(returns))
+        logger.log_tabular("nb_unexpected_ev", np.mean(nb_unexpected_ev))
+        logger.log_tabular("wrong_mode_actions", np.mean(wrong_mode_actions))
+        logger.log_tabular("comm action %", np.mean(comm_counter)/400)
+        logger.log_tabular("radar action %", np.mean(radar_counter)/400)
+        logger.log_tabular("no-op %", (400 - np.mean(comm_counter) - np.mean(radar_counter)) / 400)
+        logger.log_tabular("comm action req %", np.mean(comm_req_counter)/400)
+        logger.log_tabular("radar action req %", np.mean(radar_req_counter)/400)
+        logger.log_tabular("no-op  req %", (400 - np.mean(comm_req_counter) - np.mean(radar_req_counter)) / 400)
+        logger.log_tabular("throughput", np.mean(throughput))
+        logger.log_tabular("r_age", np.mean(r_age))
+        logger.log_tabular("r_radar", np.mean(r_radar))
+        logger.log_tabular("r_overflow", np.mean(r_overflow))
         for i in range(env_config['num_users']):
-            logz.log_tabular("Reward"+str(i+1), np.mean(returns, axis=1)[i])
-            logz.log_tabular("StdReward"+str(i+1), np.std(returns, axis=1)[i])
-            logz.log_tabular("MaxReward"+str(i+1), np.max(returns, axis=1)[i])
-            logz.log_tabular("MinReward"+str(i+1), np.min(returns, axis=1)[i])
-        logz.log_tabular("TimestepsThisBatch", timesteps_this_batch)
-        logz.log_tabular("TimestepsSoFar", total_timesteps)
+            logger.log_tabular("Reward"+str(i+1), np.mean(returns, axis=1)[i])
+            logger.log_tabular("StdReward"+str(i+1), np.std(returns, axis=1)[i])
+            logger.log_tabular("MaxReward"+str(i+1), np.max(returns, axis=1)[i])
+            logger.log_tabular("MinReward"+str(i+1), np.min(returns, axis=1)[i])
+        logger.log_tabular("TimestepsThisBatch", timesteps_this_batch)
+        logger.log_tabular("TimestepsSoFar", total_timesteps)
         
-        logz.dump_tabular(step=itr)
+        logger.dump_tabular(step=itr)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('env_name', type=str, default='AV_JRC_AoI-v3d')

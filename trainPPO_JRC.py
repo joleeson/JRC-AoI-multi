@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 #%pdb
 """
-
 Code for the paper "Learning to Schedule Joint Radar-Communication with Deep
 Multi-Agent Reinforcement Learning", IEEE Transactions on Vehicular Technology
 
 Author: Joash Lee
+
+This program uses the Multi-Agent Proximal Policy Optimization (MAPPO) algorithm
+to solve the Joint Radar-Communication (JRC) and Age of Information (AoI) Markov
+Game in the file 'JRCwithAOI_multi.py'
 
 """
 
@@ -16,17 +19,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import gym
-import logging
+import logger
 import os
 import time
 import inspect
-from multiprocessing import Process
 from torch.distributions import Categorical, Normal
-from torch.distributions.multinomial import Multinomial
 from typing import Callable, Union
 
-# from JRCwithAOI_multi_v0d import AV_Environment
-from JRCwithAOI_multi_v0d2 import AV_Environment
+from JRCwithAOI_multi import AV_Environment
 import json
 
 
@@ -45,11 +45,11 @@ def pathlength(path):
 
 def setup_logger(logdir, locals_):
     # Configure output directory for logging
-    logging.configure_output_dir(logdir)
+    logger.configure_output_dir(logdir)
     # Log experimental parameters
     args = inspect.getargspec(train_AC)[0]
     params = {k: locals_[k] if k in locals_ else None for k in args}
-    logging.save_params(params)
+    logger.save_params(params)
     
 def save_variables(model, model_file):
     """Save parameters of the NN 'model' to the file destination 'model_file'. """
@@ -231,7 +231,7 @@ class Agent(object):
         # self.device = torch.device(0 if torch.cuda.is_available() else "cpu")
         self.device = torch.device("cpu")
         
-        policy_in_dim = int(self.ob_dim) # / self.num_users)
+        policy_in_dim = int(self.ob_dim)
         policy_out_dim = int(self.ac_dim)
         
         self.users_per_agent = int(self.num_users/self.num_agents)      # for parameter sharing
@@ -357,7 +357,7 @@ class Agent(object):
             
             ob, rew, done, _ = env.step(ac)
             
-            ac, log_prob = self.act(ob) # YOUR CODE HERE
+            ac, log_prob = self.act(ob)
             
             for i in range(self.num_users):
                 next_obs[str(i+1)].append(ob[str(i+1)])
@@ -520,12 +520,12 @@ class Agent(object):
                     
         # Log
         for i in range(1, self.num_users+1):
-            logging.log_tabular("Loss "+str(i), np.mean(losses[str(i)]))
-            logging.log_tabular("Policy Gradient Loss "+str(i), np.mean(pg_losses[str(i)]))
-            logging.log_tabular("Clip Fraction "+str(i), np.mean(clip_fractions[str(i)]))
-            logging.log_tabular("KL Divergence "+str(i), np.mean(approx_kl_divs[str(i)]))
-            logging.log_tabular("Value Loss "+str(i), np.mean(value_losses[str(i)]))
-            logging.log_tabular("Entropy Loss "+str(i), np.mean(entropy_losses[str(i)]))
+            logger.log_tabular("Loss "+str(i), np.mean(losses[str(i)]))
+            logger.log_tabular("Policy Gradient Loss "+str(i), np.mean(pg_losses[str(i)]))
+            logger.log_tabular("Clip Fraction "+str(i), np.mean(clip_fractions[str(i)]))
+            logger.log_tabular("KL Divergence "+str(i), np.mean(approx_kl_divs[str(i)]))
+            logger.log_tabular("Value Loss "+str(i), np.mean(value_losses[str(i)]))
+            logger.log_tabular("Entropy Loss "+str(i), np.mean(entropy_losses[str(i)]))
             
 
 # In[]
@@ -715,49 +715,49 @@ def train_AC(
         
         # Log diagnostics
         ep_lengths = [pathlength(path['1']) for path in paths]
-        logging.log_tabular("Time", time.time() - start)
-        logging.log_tabular("Iteration", itr)
-        logging.log_tabular("Average Reward", av_reward)   # per agent per episode
-        logging.log_tabular("StdReward", np.std(returns))
-        logging.log_tabular("MaxReward", np.max(returns))
-        logging.log_tabular("MinReward", np.min(returns))
-        logging.log_tabular("nb_unexpected_ev", np.mean(nb_unexpected_ev))
-        logging.log_tabular("wrong_mode_actions", np.mean(wrong_mode_actions))
-        logging.log_tabular("comm action %", np.mean(comm_counter)/400)
-        logging.log_tabular("radar action %", np.mean(radar_counter)/400)
-        logging.log_tabular("no-op %", (400 - np.mean(comm_counter) - np.mean(radar_counter)) / 400)
+        logger.log_tabular("Time", time.time() - start)
+        logger.log_tabular("Iteration", itr)
+        logger.log_tabular("Average Reward", av_reward)   # per agent per episode
+        logger.log_tabular("StdReward", np.std(returns))
+        logger.log_tabular("MaxReward", np.max(returns))
+        logger.log_tabular("MinReward", np.min(returns))
+        logger.log_tabular("nb_unexpected_ev", np.mean(nb_unexpected_ev))
+        logger.log_tabular("wrong_mode_actions", np.mean(wrong_mode_actions))
+        logger.log_tabular("comm action %", np.mean(comm_counter)/400)
+        logger.log_tabular("radar action %", np.mean(radar_counter)/400)
+        logger.log_tabular("no-op %", (400 - np.mean(comm_counter) - np.mean(radar_counter)) / 400)
         if test==True:
-            logging.log_tabular("comm action req %", np.mean(comm_req_counter, axis=0)/400)
-            logging.log_tabular("radar action req %", np.mean(radar_req_counter, axis=0)/400)
-            logging.log_tabular("comm_req_t_idle_map", np.mean(comm_req_t_idle_map, axis=0) / 400)
-            logging.log_tabular("radar_req_t_idle_map", np.mean(radar_req_t_idle_map, axis=0) / 400)
-            logging.log_tabular("comm_req_t_last_map", np.mean(comm_req_t_last_map, axis=0) / 400)
-            logging.log_tabular("radar_req_t_last_map", np.mean(radar_req_t_last_map, axis=0) / 400)
-            logging.log_tabular("state_map", np.mean(state_map, axis=0) / 400)
-            logging.log_tabular("action_map", np.mean(action_map, axis=0) / 400)
-            logging.log_tabular('comm_req_channel_map', np.mean(comm_req_channel_map, axis=0) / 400)
-            logging.log_tabular('radar_req_channel_map', np.mean(radar_req_channel_map, axis=0) / 400)
-            logging.log_tabular('comm_req_channel_age_map', np.mean(comm_req_channel_age_map, axis=0) / 400)
-            logging.log_tabular('radar_req_channel_age_map', np.mean(radar_req_channel_age_map, axis=0) / 400)
+            logger.log_tabular("comm action req %", np.mean(comm_req_counter, axis=0)/400)
+            logger.log_tabular("radar action req %", np.mean(radar_req_counter, axis=0)/400)
+            logger.log_tabular("comm_req_t_idle_map", np.mean(comm_req_t_idle_map, axis=0) / 400)
+            logger.log_tabular("radar_req_t_idle_map", np.mean(radar_req_t_idle_map, axis=0) / 400)
+            logger.log_tabular("comm_req_t_last_map", np.mean(comm_req_t_last_map, axis=0) / 400)
+            logger.log_tabular("radar_req_t_last_map", np.mean(radar_req_t_last_map, axis=0) / 400)
+            logger.log_tabular("state_map", np.mean(state_map, axis=0) / 400)
+            logger.log_tabular("action_map", np.mean(action_map, axis=0) / 400)
+            logger.log_tabular('comm_req_channel_map', np.mean(comm_req_channel_map, axis=0) / 400)
+            logger.log_tabular('radar_req_channel_map', np.mean(radar_req_channel_map, axis=0) / 400)
+            logger.log_tabular('comm_req_channel_age_map', np.mean(comm_req_channel_age_map, axis=0) / 400)
+            logger.log_tabular('radar_req_channel_age_map', np.mean(radar_req_channel_age_map, axis=0) / 400)
             
-            logging.log_tabular('t_idle_map', np.mean(t_idle_map, axis=0) / 400)
-            logging.log_tabular('t_last_map', np.mean(t_last_map, axis=0) / 400)
-            logging.log_tabular('channel_age_map', np.mean(channel_age_map, axis=0) / 400)
+            logger.log_tabular('t_idle_map', np.mean(t_idle_map, axis=0) / 400)
+            logger.log_tabular('t_last_map', np.mean(t_last_map, axis=0) / 400)
+            logger.log_tabular('channel_age_map', np.mean(channel_age_map, axis=0) / 400)
         else:
-            logging.log_tabular("comm action req %", np.mean(comm_req_counter)/400)
-            logging.log_tabular("radar action req %", np.mean(radar_req_counter)/400)
-        logging.log_tabular("no-op  req %", (400 - np.mean(comm_req_counter) - np.mean(radar_req_counter)) / 400)
-        logging.log_tabular("throughput", np.mean(throughput))
-        logging.log_tabular("r_age", np.mean(r_age))
-        logging.log_tabular("r_radar", np.mean(r_radar))
-        logging.log_tabular("r_overflow", np.mean(r_overflow))
+            logger.log_tabular("comm action req %", np.mean(comm_req_counter)/400)
+            logger.log_tabular("radar action req %", np.mean(radar_req_counter)/400)
+        logger.log_tabular("no-op  req %", (400 - np.mean(comm_req_counter) - np.mean(radar_req_counter)) / 400)
+        logger.log_tabular("throughput", np.mean(throughput))
+        logger.log_tabular("r_age", np.mean(r_age))
+        logger.log_tabular("r_radar", np.mean(r_radar))
+        logger.log_tabular("r_overflow", np.mean(r_overflow))
         for i in range(num_users):
-            logging.log_tabular("Reward"+str(i+1), np.mean(returns, axis=1)[i])
-            logging.log_tabular("StdReward"+str(i+1), np.std(returns, axis=1)[i])
-            logging.log_tabular("MaxReward"+str(i+1), np.max(returns, axis=1)[i])
-            logging.log_tabular("MinReward"+str(i+1), np.min(returns, axis=1)[i])
-        logging.log_tabular("TimestepsThisBatch", timesteps_this_batch)
-        logging.log_tabular("TimestepsSoFar", total_timesteps)
+            logger.log_tabular("Reward"+str(i+1), np.mean(returns, axis=1)[i])
+            logger.log_tabular("StdReward"+str(i+1), np.std(returns, axis=1)[i])
+            logger.log_tabular("MaxReward"+str(i+1), np.max(returns, axis=1)[i])
+            logger.log_tabular("MinReward"+str(i+1), np.min(returns, axis=1)[i])
+        logger.log_tabular("TimestepsThisBatch", timesteps_this_batch)
+        logger.log_tabular("TimestepsSoFar", total_timesteps)
         
         if test != True:
             adv_n = agent.estimate_decen_adv(ob_no, next_ob_no, re_n, terminal_n)
@@ -772,9 +772,9 @@ def train_AC(
                     save_itr_info(f"{policy_model_file[str(i+1)]}-{itr}.txt", itr, av_reward)
                     save_variables(agent.net[str(i+1)], policy_model_file[str(i+1)])
         
-            logging.dump_tabular(step=itr)
+            logger.dump_tabular(step=itr)
         else:
-            logging.save_data()
+            logger.save_data()
     
     
     if test != True:
