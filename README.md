@@ -1,4 +1,5 @@
-# Multi-Agent JRC-AoI
+# Multi-Agent JRC-AoI Programs
+[![DOI](https://zenodo.org/badge/422615600.svg)](https://zenodo.org/badge/latestdoi/422615600)
 Supplementary material for the following papers:
 
 J. Lee, D. Niyato, Y. L. Guan and D. I. Kim, "Learning to Schedule Joint Radar-Communication Requests for Optimal Information Freshness," 2021 IEEE Intelligent Vehicles Symposium (IV), 2021, pp. 8-15, doi: 10.1109/IV48863.2021.9575131.
